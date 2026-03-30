@@ -6,11 +6,28 @@ function HelpPage() {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [name, setName] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
   const [requests, setRequests] = useState([]);
   const [offers, setOffers] = useState([]);
-  const [filter, setFilter] = useState("All");
+  const [filterCategory, setFilterCategory] = useState("All");
 
   const categories = ["Food", "Clothing", "Shelter", "Water", "Medicine"];
+
+  const inputStyle = {
+    backgroundColor: "#FEFAE0",
+    border: "1px solid #DDA15E",
+    borderRadius: 8,
+    padding: "10px 14px",
+    width: "100%",
+    fontSize: 14,
+    color: "#1a1a1a",
+    outline: "none",
+  };
+
+  function isExpired(expiryDate) {
+    if (!expiryDate) return false;
+    return new Date(expiryDate) < new Date();
+  }
 
   function handleSubmit() {
     if (!category || !description || !location) {
@@ -25,7 +42,9 @@ function HelpPage() {
       location,
       name: name || "Anonymous",
       date: new Date().toLocaleDateString(),
+      expiryDate: expiryDate || null,
       status: activeTab === "need" ? "Needs Help" : "Offering Help",
+      claimed: false,
     };
 
     if (activeTab === "need") {
@@ -38,6 +57,17 @@ function HelpPage() {
     setDescription("");
     setLocation("");
     setName("");
+    setExpiryDate("");
+  }
+
+  function handleClaim(id) {
+    setRequests(requests.map((r) =>
+      r.id === id ? { ...r, claimed: true, status: "Claimed" } : r
+    ));
+  }
+
+  function handleDelete(id) {
+    setOffers(offers.filter((o) => o.id !== id));
   }
 
   function getCategoryColor(cat) {
@@ -45,28 +75,17 @@ function HelpPage() {
       Food: "#606C38",
       Clothing: "#BC6C25",
       Shelter: "#DDA15E",
-      Water: "#4A90A4",
-      Medicine: "#8B4B6B",
+      Water: "#4a90a4",
+      Medicine: "#a44a4a",
     };
     return colors[cat] || "#888";
   }
 
-  const inputStyle = {
-    backgroundColor: "#FEFAE0",
-    border: "1px solid #DDA15E",
-    borderRadius: 8,
-    padding: "10px 14px",
-    width: "100%",
-    fontSize: 14,
-    color: "#1a1a1a",
-    outline: "none",
-  };
-
-  const activeList = activeTab === "need" ? requests : offers;
+  const displayList = activeTab === "need" ? requests : offers;
   const filteredList =
-    filter === "All"
-      ? activeList
-      : activeList.filter((item) => item.category === filter);
+    filterCategory === "All"
+      ? displayList
+      : displayList.filter((item) => item.category === filterCategory);
 
   return (
     <div style={{ backgroundColor: "#FEFAE0" }} className="min-h-screen px-6 py-10">
@@ -78,14 +97,14 @@ function HelpPage() {
         Community Help Board
       </h1>
       <p className="text-center text-gray-500 text-sm mb-8">
-        Ask for help or offer support to neighbours in your area.
+        Request help from your community or offer support to those in need.
       </p>
 
       {/* TABS */}
       <div className="flex justify-center mb-8">
         <div
           style={{ backgroundColor: "#fff", border: "1px solid #DDA15E" }}
-          className="flex rounded-full p-1"
+          className="flex rounded-full p-1 gap-1"
         >
           <button
             onClick={() => setActiveTab("need")}
@@ -155,11 +174,11 @@ function HelpPage() {
                 Description <span style={{ color: "#BC6C25" }}>*</span>
               </label>
               <textarea
-                style={{ ...inputStyle, resize: "none", height: 120 }}
+                style={{ ...inputStyle, resize: "none", height: 110 }}
                 placeholder={
                   activeTab === "need"
-                    ? "Describe what you need..."
-                    : "Describe what you can offer..."
+                    ? "Describe what you need and how urgent it is..."
+                    : "Describe what you are offering and how to collect it..."
                 }
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -183,7 +202,25 @@ function HelpPage() {
               />
             </div>
 
-            {/* Optional name */}
+            {/* Expiry Date */}
+            <div>
+              <label
+                style={{ color: "#606C38" }}
+                className="text-sm font-semibold block mb-1"
+              >
+                {activeTab === "need" ? "Need expires on" : "Offer expires on"}{" "}
+                <span style={{ color: "#888" }}>(optional)</span>
+              </label>
+              <input
+                style={inputStyle}
+                type="date"
+                value={expiryDate}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => setExpiryDate(e.target.value)}
+              />
+            </div>
+
+            {/* Name */}
             <div>
               <label
                 style={{ color: "#606C38" }}
@@ -210,13 +247,162 @@ function HelpPage() {
               }}
               className="w-full py-3 rounded-full font-semibold mt-2 hover:opacity-90 transition-all"
             >
-              {activeTab === "need" ? "Post My Need" : "Offer My Help"}
+              {activeTab === "need" ? "Post My Need" : "Offer My Support"}
             </button>
 
           </div>
         </div>
 
-       
+        {/* RIGHT — FEED */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2
+              style={{ color: activeTab === "need" ? "#606C38" : "#BC6C25" }}
+              className="text-xl font-bold"
+            >
+              {activeTab === "need" ? "Help Requests" : "Support Offers"}
+            </h2>
+
+            <select
+              style={{
+                ...inputStyle,
+                width: "auto",
+                padding: "6px 12px",
+                fontSize: 13,
+              }}
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <option value="All">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          {filteredList.length === 0 ? (
+            <div
+              style={{ border: "1px dashed #DDA15E", color: "#888" }}
+              className="rounded-2xl p-10 text-center"
+            >
+              <p className="text-lg font-semibold">Nothing here yet</p>
+              <p className="text-sm mt-2">
+                {activeTab === "need"
+                  ? "Help requests will appear here."
+                  : "Support offers will appear here."}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {filteredList.map((item) => {
+                const expired = isExpired(item.expiryDate);
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      backgroundColor: expired ? "#f5f5f5" : "#fff",
+                      border: `1px solid ${expired ? "#ccc" : "#DDA15E"}`,
+                      opacity: expired ? 0.7 : 1,
+                    }}
+                    className="rounded-2xl p-5"
+                  >
+                    {/* Top row — category + status */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        style={{
+                          backgroundColor: getCategoryColor(item.category),
+                          color: "#FEFAE0",
+                        }}
+                        className="text-xs px-3 py-1 rounded-full font-semibold"
+                      >
+                        {item.category}
+                      </span>
+                      <span
+                        style={{
+                          backgroundColor: item.claimed
+                            ? "#DDA15E"
+                            : expired
+                            ? "#ccc"
+                            : "#FEFAE0",
+                          border: `1px solid ${item.claimed ? "#DDA15E" : expired ? "#ccc" : "#606C38"}`,
+                          color: item.claimed
+                            ? "#fff"
+                            : expired
+                            ? "#888"
+                            : "#606C38",
+                        }}
+                        className="text-xs px-3 py-1 rounded-full font-semibold"
+                      >
+                        {expired ? "Expired" : item.status}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 mt-2 mb-2">
+                      {item.description}
+                    </p>
+
+                    {/* Expiry notice */}
+                    {item.expiryDate && (
+                      <p
+                        style={{ color: expired ? "#a44a4a" : "#BC6C25" }}
+                        className="text-xs font-semibold mb-2"
+                      >
+                        {expired
+                          ? "This listing has expired"
+                          : `Expires on ${new Date(item.expiryDate).toLocaleDateString()}`}
+                      </p>
+                    )}
+
+                    {/* Location + name */}
+                    <div className="flex items-center justify-between text-xs text-gray-400 mb-4">
+                      <span>{item.location}</span>
+                      <span>{item.name} · {item.date}</span>
+                    </div>
+
+                    {/* Action buttons */}
+                    {!expired && activeTab === "need" && !item.claimed && (
+                      <button
+                        onClick={() => handleClaim(item.id)}
+                        style={{ backgroundColor: "#606C38", color: "#FEFAE0" }}
+                        className="w-full py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-all"
+                      >
+                        Claim — I Can Help
+                      </button>
+                    )}
+
+                    {activeTab === "need" && item.claimed && (
+                      <p
+                        style={{ color: "#DDA15E" }}
+                        className="text-center text-sm font-semibold"
+                      >
+                        Someone is on the way
+                      </p>
+                    )}
+
+                    {activeTab === "offer" && (
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        style={{
+                          backgroundColor: "#FEFAE0",
+                          border: "1px solid #a44a4a",
+                          color: "#a44a4a",
+                        }}
+                        className="w-full py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-all"
+                      >
+                        Remove Offer
+                      </button>
+                    )}
+
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
   );
 }
 
