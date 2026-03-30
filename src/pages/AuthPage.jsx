@@ -32,7 +32,6 @@ function AuthPage() {
   async function handleEmailAuth() {
     setError("");
     setLoading(true);
-
     try {
       if (activeTab === "register") {
         if (!name || !area || !email || !password) {
@@ -56,7 +55,10 @@ function AuthPage() {
     } catch (err) {
       if (err.code === "auth/email-already-in-use") {
         setError("This email is already registered. Please log in.");
-      } else if (err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+      } else if (
+        err.code === "auth/wrong-password" ||
+        err.code === "auth/user-not-found"
+      ) {
         setError("Incorrect email or password.");
       } else if (err.code === "auth/weak-password") {
         setError("Password must be at least 6 characters.");
@@ -64,7 +66,6 @@ function AuthPage() {
         setError("Something went wrong. Please try again.");
       }
     }
-
     setLoading(false);
   }
 
@@ -82,19 +83,36 @@ function AuthPage() {
 
   return (
     <div
-      style={{ backgroundColor: "#FEFAE0" }}
-      className="min-h-screen flex items-center justify-center px-4 py-16"
+      style={{
+        backgroundColor: "#1a2e0a",
+        backgroundImage: "url('/src/assets/hero.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+      className="min-h-screen flex items-center justify-center px-4 py-16 relative"
     >
+      {/* Overlay */}
       <div
-        style={{ backgroundColor: "#fff", border: "1px solid #DDA15E" }}
-        className="rounded-2xl p-8 w-full max-w-md shadow-sm"
+        className="absolute inset-0"
+        style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+      />
+
+      {/* Card */}
+      <div
+        style={{
+          backgroundColor: "#FEFAE0",
+          border: "1px solid #DDA15E",
+          position: "relative",
+          zIndex: 10,
+        }}
+        className="rounded-2xl p-8 w-full max-w-md shadow-2xl"
       >
         {/* Logo */}
         <div className="text-center mb-6">
           <img
             src="/src/assets/local roots logo.jpg"
             alt="Local Roots"
-            className="w-12 h-12 rounded-full object-cover mx-auto mb-2"
+            className="w-14 h-14 rounded-full object-cover mx-auto mb-3"
           />
           <h1
             style={{ color: "#606C38" }}
@@ -103,13 +121,13 @@ function AuthPage() {
             Local Roots
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Protect and support your community
+            Every neighbour matters
           </p>
         </div>
 
         {/* Tabs */}
         <div
-          style={{ backgroundColor: "#FEFAE0", border: "1px solid #DDA15E" }}
+          style={{ backgroundColor: "#e8e0cc" }}
           className="flex rounded-full p-1 gap-1 mb-6"
         >
           <button
@@ -136,7 +154,7 @@ function AuthPage() {
 
         <div className="flex flex-col gap-4">
 
-          {/* Name — only on register */}
+          {/* Name — register only */}
           {activeTab === "register" && (
             <div>
               <label
@@ -155,7 +173,7 @@ function AuthPage() {
             </div>
           )}
 
-          {/* Area — only on register */}
+          {/* Area — register only */}
           {activeTab === "register" && (
             <div>
               <label
@@ -208,17 +226,21 @@ function AuthPage() {
             />
           </div>
 
-          {/* Error message */}
+          {/* Error */}
           {error && (
             <p
-              style={{ color: "#a44a4a", backgroundColor: "rgba(164,74,74,0.08)", border: "1px solid #a44a4a" }}
+              style={{
+                color: "#a44a4a",
+                backgroundColor: "rgba(164,74,74,0.08)",
+                border: "1px solid #a44a4a",
+              }}
               className="text-sm px-4 py-2 rounded-lg"
             >
               {error}
             </p>
           )}
 
-          {/* Submit button */}
+          {/* Submit */}
           <button
             onClick={handleEmailAuth}
             disabled={loading}
@@ -243,7 +265,7 @@ function AuthPage() {
             <div style={{ backgroundColor: "#DDA15E" }} className="flex-1 h-px" />
           </div>
 
-          {/* Google Sign In */}
+          {/* Google */}
           <button
             onClick={handleGoogle}
             disabled={loading}
