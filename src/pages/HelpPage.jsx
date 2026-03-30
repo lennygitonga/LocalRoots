@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { addRequest, claimRequest, deleteRequest } from "../store/slices/helpSlice";
+import { startConversation } from "../store/slices/chatSlice";
 
 function HelpPage() {
   const [activeTab, setActiveTab] = useState("need");
@@ -7,8 +11,11 @@ function HelpPage() {
   const [location, setLocation] = useState("");
   const [name, setName] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
-  const [requests, setRequests] = useState([]);
   const [filterCategory, setFilterCategory] = useState("All");
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const requests = useSelector((state) => state.help);
 
   const categories = ["Food", "Clothing", "Shelter", "Water", "Medicine"];
 
@@ -46,7 +53,7 @@ function HelpPage() {
       claimed: false,
     };
 
-    setRequests([newRequest, ...requests]);
+    dispatch(addRequest(newRequest));
     setCategory("");
     setDescription("");
     setLocation("");
@@ -54,14 +61,33 @@ function HelpPage() {
     setExpiryDate("");
   }
 
-  function handleClaim(id) {
-    setRequests(requests.map((r) =>
-      r.id === id ? { ...r, claimed: true, status: "Claimed" } : r
-    ));
+  function handleClaim(item) {
+    dispatch(claimRequest({
+      id: item.id,
+      claimedBy: "Me",
+    }));
+
+    dispatch(startConversation({
+      id: `conv_${item.id}`,
+      with: item.name,
+      relatedRequest: `${item.category} · ${item.location}`,
+      lastMessage: "I can help with your request",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      unread: 1,
+      messages: [
+        {
+          from: "me",
+          text: `Hi ${item.name}, I saw your ${item.category} request in ${item.location}. I can help — let's coordinate here.`,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        },
+      ],
+    }));
+
+    navigate("/chat");
   }
 
   function handleDelete(id) {
-    setRequests(requests.filter((r) => r.id !== id));
+    dispatch(deleteRequest(id));
   }
 
   function getCategoryColor(cat) {
@@ -75,7 +101,6 @@ function HelpPage() {
     return colors[cat] || "#888";
   }
 
-  // On the give side show only unclaimed and not expired
   const filteredRequests = requests
     .filter((r) => {
       if (activeTab === "offer") return !r.claimed && !isExpired(r.expiryDate);
@@ -129,7 +154,7 @@ function HelpPage() {
 
       <div className="grid grid-cols-2 gap-8 max-w-6xl mx-auto">
 
-        {/* LEFT — FORM (only visible on I Need Help tab) */}
+        {/* LEFT */}
         {activeTab === "need" ? (
           <div
             style={{ backgroundColor: "#fff", border: "1px solid #DDA15E" }}
@@ -144,19 +169,11 @@ function HelpPage() {
 
             <div className="flex flex-col gap-4">
 
-              {/* Category */}
               <div>
-                <label
-                  style={{ color: "#606C38" }}
-                  className="text-sm font-semibold block mb-1"
-                >
+                <label style={{ color: "#606C38" }} className="text-sm font-semibold block mb-1">
                   Category <span style={{ color: "#BC6C25" }}>*</span>
                 </label>
-                <select
-                  style={inputStyle}
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                >
+                <select style={inputStyle} value={category} onChange={(e) => setCategory(e.target.value)}>
                   <option value="">Select category...</option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -164,12 +181,8 @@ function HelpPage() {
                 </select>
               </div>
 
-              {/* Description */}
               <div>
-                <label
-                  style={{ color: "#606C38" }}
-                  className="text-sm font-semibold block mb-1"
-                >
+                <label style={{ color: "#606C38" }} className="text-sm font-semibold block mb-1">
                   Description <span style={{ color: "#BC6C25" }}>*</span>
                 </label>
                 <textarea
@@ -180,12 +193,8 @@ function HelpPage() {
                 />
               </div>
 
-              {/* Location */}
               <div>
-                <label
-                  style={{ color: "#606C38" }}
-                  className="text-sm font-semibold block mb-1"
-                >
+                <label style={{ color: "#606C38" }} className="text-sm font-semibold block mb-1">
                   Location / Area <span style={{ color: "#BC6C25" }}>*</span>
                 </label>
                 <input
@@ -197,14 +206,9 @@ function HelpPage() {
                 />
               </div>
 
-              {/* Expiry Date */}
               <div>
-                <label
-                  style={{ color: "#606C38" }}
-                  className="text-sm font-semibold block mb-1"
-                >
-                  Need expires on{" "}
-                  <span style={{ color: "#888" }}>(optional)</span>
+                <label style={{ color: "#606C38" }} className="text-sm font-semibold block mb-1">
+                  Need expires on <span style={{ color: "#888" }}>(optional)</span>
                 </label>
                 <input
                   style={inputStyle}
@@ -215,14 +219,9 @@ function HelpPage() {
                 />
               </div>
 
-              {/* Name */}
               <div>
-                <label
-                  style={{ color: "#606C38" }}
-                  className="text-sm font-semibold block mb-1"
-                >
-                  Your Name{" "}
-                  <span style={{ color: "#888" }}>(optional)</span>
+                <label style={{ color: "#606C38" }} className="text-sm font-semibold block mb-1">
+                  Your Name <span style={{ color: "#888" }}>(optional)</span>
                 </label>
                 <input
                   style={inputStyle}
@@ -233,7 +232,6 @@ function HelpPage() {
                 />
               </div>
 
-              {/* Submit */}
               <button
                 onClick={handleSubmit}
                 style={{ backgroundColor: "#606C38", color: "#FEFAE0" }}
@@ -245,44 +243,30 @@ function HelpPage() {
             </div>
           </div>
         ) : (
-
-          // LEFT side on Give tab — explanation card
           <div
             style={{ backgroundColor: "#fff", border: "1px solid #DDA15E" }}
             className="rounded-2xl p-6 h-fit text-center"
           >
-            <div className="text-5xl mb-4">🤝</div>
-            <h2
-              style={{ color: "#BC6C25" }}
-              className="text-xl font-bold mb-3"
-            >
+            <h2 style={{ color: "#BC6C25" }} className="text-xl font-bold mb-3">
               You are in Give Mode
             </h2>
             <p className="text-gray-500 text-sm leading-relaxed">
               Browse open requests on the right and click{" "}
               <strong style={{ color: "#606C38" }}>I Can Help</strong> on any
-              need you can fulfil. The person will be notified that help is
-              on the way.
+              need you can fulfil. You will be taken directly to a private
+              chat with that person.
             </p>
             <div
               style={{ backgroundColor: "#FEFAE0", border: "1px solid #DDA15E" }}
               className="rounded-xl p-4 mt-6 text-left"
             >
-              <p style={{ color: "#606C38" }} className="text-xs font-semibold mb-1">
+              <p style={{ color: "#606C38" }} className="text-xs font-semibold mb-2">
                 How it works
               </p>
-              <p className="text-xs text-gray-500">
-                1. Browse needs on the right
-              </p>
-              <p className="text-xs text-gray-500">
-                2. Click I Can Help on a request
-              </p>
-              <p className="text-xs text-gray-500">
-                3. The request gets marked as Claimed
-              </p>
-              <p className="text-xs text-gray-500">
-                4. Coordinate with the person in Community Chat
-              </p>
+              <p className="text-xs text-gray-500 mb-1">1. Browse needs on the right</p>
+              <p className="text-xs text-gray-500 mb-1">2. Click I Can Help on a request</p>
+              <p className="text-xs text-gray-500 mb-1">3. A private chat opens automatically</p>
+              <p className="text-xs text-gray-500">4. Coordinate the handover in chat</p>
             </div>
           </div>
         )}
@@ -296,14 +280,8 @@ function HelpPage() {
             >
               {activeTab === "need" ? "All Requests" : "Open Requests"}
             </h2>
-
             <select
-              style={{
-                ...inputStyle,
-                width: "auto",
-                padding: "6px 12px",
-                fontSize: 13,
-              }}
+              style={{ ...inputStyle, width: "auto", padding: "6px 12px", fontSize: 13 }}
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
@@ -320,9 +298,7 @@ function HelpPage() {
               className="rounded-2xl p-10 text-center"
             >
               <p className="text-lg font-semibold">
-                {activeTab === "offer"
-                  ? "No open requests right now"
-                  : "No requests yet"}
+                {activeTab === "offer" ? "No open requests right now" : "No requests yet"}
               </p>
               <p className="text-sm mt-2">
                 {activeTab === "offer"
@@ -332,7 +308,7 @@ function HelpPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {filteredRequests.map((item) => {
+              {[...filteredRequests].reverse().map((item) => {
                 const expired = isExpired(item.expiryDate);
                 return (
                   <div
@@ -344,36 +320,18 @@ function HelpPage() {
                     }}
                     className="rounded-2xl p-5"
                   >
-                    {/* Category + status */}
                     <div className="flex items-center justify-between mb-2">
                       <span
-                        style={{
-                          backgroundColor: getCategoryColor(item.category),
-                          color: "#FEFAE0",
-                        }}
+                        style={{ backgroundColor: getCategoryColor(item.category), color: "#FEFAE0" }}
                         className="text-xs px-3 py-1 rounded-full font-semibold"
                       >
                         {item.category}
                       </span>
                       <span
                         style={{
-                          backgroundColor: item.claimed
-                            ? "#DDA15E"
-                            : expired
-                            ? "#ccc"
-                            : "#FEFAE0",
-                          border: `1px solid ${
-                            item.claimed
-                              ? "#DDA15E"
-                              : expired
-                              ? "#ccc"
-                              : "#606C38"
-                          }`,
-                          color: item.claimed
-                            ? "#fff"
-                            : expired
-                            ? "#888"
-                            : "#606C38",
+                          backgroundColor: item.claimed ? "#DDA15E" : expired ? "#ccc" : "#FEFAE0",
+                          border: `1px solid ${item.claimed ? "#DDA15E" : expired ? "#ccc" : "#606C38"}`,
+                          color: item.claimed ? "#fff" : expired ? "#888" : "#606C38",
                         }}
                         className="text-xs px-3 py-1 rounded-full font-semibold"
                       >
@@ -381,12 +339,8 @@ function HelpPage() {
                       </span>
                     </div>
 
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 mt-2 mb-2">
-                      {item.description}
-                    </p>
+                    <p className="text-sm text-gray-600 mt-2 mb-2">{item.description}</p>
 
-                    {/* Expiry */}
                     {item.expiryDate && (
                       <p
                         style={{ color: expired ? "#a44a4a" : "#BC6C25" }}
@@ -394,24 +348,27 @@ function HelpPage() {
                       >
                         {expired
                           ? "This listing has expired"
-                          : `Expires on ${new Date(
-                              item.expiryDate
-                            ).toLocaleDateString()}`}
+                          : `Expires on ${new Date(item.expiryDate).toLocaleDateString()}`}
                       </p>
                     )}
 
-                    {/* Location + name */}
+                    {item.claimed && item.claimedBy && (
+                      <p
+                        style={{ color: "#606C38" }}
+                        className="text-xs font-semibold mb-2"
+                      >
+                        Claimed by {item.claimedBy}
+                      </p>
+                    )}
+
                     <div className="flex items-center justify-between text-xs text-gray-400 mb-4">
                       <span>{item.location}</span>
-                      <span>
-                        {item.name} · {item.date}
-                      </span>
+                      <span>{item.name} · {item.date}</span>
                     </div>
 
-                    {/* Action buttons */}
                     {activeTab === "offer" && !item.claimed && !expired && (
                       <button
-                        onClick={() => handleClaim(item.id)}
+                        onClick={() => handleClaim(item)}
                         style={{ backgroundColor: "#606C38", color: "#FEFAE0" }}
                         className="w-full py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-all"
                       >
@@ -420,10 +377,7 @@ function HelpPage() {
                     )}
 
                     {activeTab === "offer" && item.claimed && (
-                      <p
-                        style={{ color: "#DDA15E" }}
-                        className="text-center text-sm font-semibold"
-                      >
+                      <p style={{ color: "#DDA15E" }} className="text-center text-sm font-semibold">
                         Someone is on the way
                       </p>
                     )}

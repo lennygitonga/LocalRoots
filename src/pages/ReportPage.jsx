@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { addReport, resolveReport } from "../store/slices/reportsSlice";
 
 function ReportPage() {
   const [type, setType] = useState("");
@@ -7,7 +9,9 @@ function ReportPage() {
   const [location, setLocation] = useState("");
   const [urgency, setUrgency] = useState("");
   const [name, setName] = useState("");
-  const [reports, setReports] = useState([]);
+
+  const dispatch = useDispatch();
+  const reports = useSelector((state) => state.reports);
 
   function handleSubmit() {
     if (!type || !description || !location || !urgency) {
@@ -31,7 +35,7 @@ function ReportPage() {
       date: new Date().toLocaleDateString(),
     };
 
-    setReports([newReport, ...reports]);
+    dispatch(addReport(newReport));
     setType("");
     setOtherType("");
     setDescription("");
@@ -227,7 +231,7 @@ function ReportPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {reports.map((report) => (
+              {[...reports].reverse().map((report) => (
                 <div
                   key={report.id}
                   style={{
@@ -258,21 +262,32 @@ function ReportPage() {
                   </p>
                   <div className="flex items-center justify-between text-xs text-gray-400">
                     <span>{report.location}</span>
-                    <span>
-                      {report.name} · {report.date}
-                    </span>
+                    <span>{report.name} · {report.date}</span>
                   </div>
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-col gap-2">
                     <span
                       style={{
-                        backgroundColor: "#FEFAE0",
-                        border: "1px solid #606C38",
-                        color: "#606C38",
+                        backgroundColor: report.status === "Resolved" ? "#606C38" : "#FEFAE0",
+                        border: `1px solid ${report.status === "Resolved" ? "#606C38" : "#DDA15E"}`,
+                        color: report.status === "Resolved" ? "#FEFAE0" : "#606C38",
                       }}
-                      className="text-xs px-3 py-1 rounded-full font-semibold"
+                      className="text-xs px-3 py-1 rounded-full font-semibold w-fit"
                     >
                       {report.status}
                     </span>
+                    {report.status === "Open" && (
+                      <button
+                        onClick={() => dispatch(resolveReport(report.id))}
+                        style={{
+                          backgroundColor: "#FEFAE0",
+                          border: "1px solid #606C38",
+                          color: "#606C38",
+                        }}
+                        className="w-full py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-all"
+                      >
+                        Mark as Resolved
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
