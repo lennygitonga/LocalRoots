@@ -1,36 +1,29 @@
+import { useDispatch, useSelector } from "react-redux";
 import { useState } from "react";
-
-const DUMMY_USER = { name: "Jane Mwangi", area: "Westlands" };
-
-const INITIAL_MESSAGES = [
-  { id: 1, name: "John Kamau", area: "Kibera", text: "Has anyone seen the food donation post in Kibera? Really helpful!", time: "09:12" },
-  { id: 2, name: "Amina Hassan", area: "Eastleigh", text: "There is a clothing drive happening this Saturday near Eastleigh market.", time: "09:45" },
-  { id: 3, name: "Peter Otieno", area: "Lang'ata", text: "Thank you to whoever claimed my food request. You really helped my family.", time: "10:03" },
-];
-
-const INITIAL_CONVERSATIONS = [
-  { id: 1, with: "John Kamau", lastMessage: "I can bring the food tomorrow", time: "10:15", unread: 2, messages: [
-    { from: "John Kamau", text: "Hi, I saw your help request", time: "10:10" },
-    { from: "me", text: "Yes I still need help", time: "10:12" },
-    { from: "John Kamau", text: "I can bring the food tomorrow", time: "10:15" },
-  ]},
-  { id: 2, with: "Amina Hassan", lastMessage: "Where exactly are you located?", time: "09:50", unread: 0, messages: [
-    { from: "Amina Hassan", text: "Where exactly are you located?", time: "09:50" },
-  ]},
-];
+import {
+  addPublicMessage,
+  sendPrivateMessage,
+  markAsRead,
+  setActiveConversation,
+} from "../store/slices/chatSlice";
 
 function getTime() {
   const now = new Date();
-  return `${now.getHours().toString().padStart(2,"0")}:${now.getMinutes().toString().padStart(2,"0")}`;
+  return `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 }
 
 function ChatPage() {
+  const dispatch = useDispatch();
+  const { publicMessages, conversations, activeConversationId } = useSelector(
+    (state) => state.chat
+  );
+
   const [activeTab, setActiveTab] = useState("public");
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
-  const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
-  const [activeConvo, setActiveConvo] = useState(null);
   const [privateInput, setPrivateInput] = useState("");
+
+  const activeConvo = conversations.find((c) => c.id === activeConversationId);
+  const totalUnread = conversations.reduce((a, c) => a + (c.unread || 0), 0);
 
   const inputStyle = {
     backgroundColor: "#FEFAE0",
@@ -42,40 +35,38 @@ function ChatPage() {
     outline: "none",
   };
 
-  function sendPublicMessage() {
+  function handleSendPublic() {
     if (!input.trim()) return;
-    setMessages([...messages, {
-      id: Date.now(),
-      name: DUMMY_USER.name,
-      area: DUMMY_USER.area,
-      text: input.trim(),
-      time: getTime(),
-    }]);
+    dispatch(
+      addPublicMessage({
+        id: Date.now(),
+        name: "Me",
+        area: "My Area",
+        text: input.trim(),
+        time: getTime(),
+      })
+    );
     setInput("");
   }
 
-  function sendPrivateMessage() {
-    if (!privateInput.trim() || !activeConvo) return;
-    const updated = conversations.map((c) =>
-      c.id === activeConvo.id
-        ? {
-            ...c,
-            lastMessage: privateInput.trim(),
-            time: getTime(),
-            messages: [...c.messages, { from: "me", text: privateInput.trim(), time: getTime() }],
-          }
-        : c
+  function handleSendPrivate() {
+    if (!privateInput.trim() || !activeConversationId) return;
+    dispatch(
+      sendPrivateMessage({
+        conversationId: activeConversationId,
+        message: {
+          from: "me",
+          text: privateInput.trim(),
+          time: getTime(),
+        },
+      })
     );
-    setConversations(updated);
-    setActiveConvo(updated.find((c) => c.id === activeConvo.id));
     setPrivateInput("");
   }
 
   function openConvo(convo) {
-    setActiveConvo(convo);
-    setConversations(conversations.map((c) =>
-      c.id === convo.id ? { ...c, unread: 0 } : c
-    ));
+    dispatch(setActiveConversation(convo.id));
+    dispatch(markAsRead(convo.id));
   }
 
   return (
@@ -92,7 +83,7 @@ function ChatPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => { setActiveTab("public"); setActiveConvo(null); }}
+            onClick={() => setActiveTab("public")}
             style={{
               backgroundColor: activeTab === "public" ? "#FEFAE0" : "transparent",
               color: activeTab === "public" ? "#606C38" : "#FEFAE0",
@@ -112,12 +103,12 @@ function ChatPage() {
             className="px-4 py-2 rounded-full text-sm font-semibold transition-all relative"
           >
             Private Messages
-            {conversations.some((c) => c.unread > 0) && (
+            {totalUnread > 0 && (
               <span
                 style={{ backgroundColor: "#BC6C25" }}
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-xs flex items-center justify-center"
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold"
               >
-                {conversations.reduce((a, c) => a + c.unread, 0)}
+                {totalUnread}
               </span>
             )}
           </button>
@@ -126,37 +117,54 @@ function ChatPage() {
 
       {/* PUBLIC CHAT */}
       {activeTab === "public" && (
-        <div className="max-w-3xl mx-auto px-6 py-6 flex flex-col" style={{ height: "calc(100vh - 140px)" }}>
-
+        <div
+          className="max-w-3xl mx-auto px-6 py-6 flex flex-col"
+          style={{ height: "calc(100vh - 140px)" }}
+        >
           {/* Messages */}
           <div className="flex-1 overflow-y-auto flex flex-col gap-3 mb-4 pr-1">
-            {messages.map((msg) => {
-              const isMe = msg.name === DUMMY_USER.name;
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
-                >
-                  {!isMe && (
-                    <span style={{ color: "#BC6C25" }} className="text-xs font-semibold mb-1 px-1">
-                      {msg.name} · {msg.area}
-                    </span>
-                  )}
+            {publicMessages.length === 0 ? (
+              <div
+                style={{ border: "1px dashed #DDA15E", color: "#888" }}
+                className="rounded-2xl p-10 text-center mt-10"
+              >
+                <p className="text-lg font-semibold">No messages yet</p>
+                <p className="text-sm mt-2">Be the first to say something.</p>
+              </div>
+            ) : (
+              publicMessages.map((msg) => {
+                const isMe = msg.name === "Me";
+                return (
                   <div
-                    style={{
-                      backgroundColor: isMe ? "#606C38" : "#fff",
-                      color: isMe ? "#FEFAE0" : "#1a1a1a",
-                      border: isMe ? "none" : "1px solid #DDA15E",
-                      maxWidth: "70%",
-                    }}
-                    className="px-4 py-2 rounded-2xl text-sm"
+                    key={msg.id}
+                    className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                   >
-                    {msg.text}
+                    {!isMe && (
+                      <span
+                        style={{ color: "#BC6C25" }}
+                        className="text-xs font-semibold mb-1 px-1"
+                      >
+                        {msg.name} · {msg.area}
+                      </span>
+                    )}
+                    <div
+                      style={{
+                        backgroundColor: isMe ? "#606C38" : "#fff",
+                        color: isMe ? "#FEFAE0" : "#1a1a1a",
+                        border: isMe ? "none" : "1px solid #DDA15E",
+                        maxWidth: "70%",
+                      }}
+                      className="px-4 py-2 rounded-2xl text-sm"
+                    >
+                      {msg.text}
+                    </div>
+                    <span className="text-xs text-gray-400 mt-1 px-1">
+                      {msg.time}
+                    </span>
                   </div>
-                  <span className="text-xs text-gray-400 mt-1 px-1">{msg.time}</span>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
 
           {/* Input */}
@@ -167,10 +175,10 @@ function ChatPage() {
               placeholder="Say something to your community..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendPublicMessage()}
+              onKeyDown={(e) => e.key === "Enter" && handleSendPublic()}
             />
             <button
-              onClick={sendPublicMessage}
+              onClick={handleSendPublic}
               style={{ backgroundColor: "#606C38", color: "#FEFAE0" }}
               className="px-5 py-2 rounded-full font-semibold text-sm hover:opacity-90 transition-all"
             >
@@ -184,10 +192,12 @@ function ChatPage() {
       {activeTab === "private" && (
         <div
           className="grid max-w-5xl mx-auto px-6 py-6 gap-4"
-          style={{ gridTemplateColumns: "280px 1fr", height: "calc(100vh - 140px)" }}
+          style={{
+            gridTemplateColumns: "280px 1fr",
+            height: "calc(100vh - 140px)",
+          }}
         >
-
-          {/* Sidebar — conversations list */}
+          {/* Sidebar */}
           <div
             style={{ backgroundColor: "#fff", border: "1px solid #DDA15E" }}
             className="rounded-2xl overflow-y-auto"
@@ -200,39 +210,63 @@ function ChatPage() {
                 Conversations
               </h2>
             </div>
-            {conversations.map((convo) => (
-              <div
-                key={convo.id}
-                onClick={() => openConvo(convo)}
-                style={{
-                  backgroundColor: activeConvo?.id === convo.id ? "#FEFAE0" : "#fff",
-                  borderBottom: "1px solid #f0e8d8",
-                  cursor: "pointer",
-                }}
-                className="px-4 py-3 hover:bg-amber-50 transition-all"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span style={{ color: "#606C38" }} className="font-semibold text-sm">
-                    {convo.with}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">{convo.time}</span>
-                    {convo.unread > 0 && (
-                      <span
-                        style={{ backgroundColor: "#BC6C25", color: "#fff" }}
-                        className="text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold"
-                      >
-                        {convo.unread}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 truncate">{convo.lastMessage}</p>
+
+            {conversations.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <p className="text-sm text-gray-400">No conversations yet.</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Claim a help request to start one.
+                </p>
               </div>
-            ))}
+            ) : (
+              conversations.map((convo) => (
+                <div
+                  key={convo.id}
+                  onClick={() => openConvo(convo)}
+                  style={{
+                    backgroundColor:
+                      activeConversationId === convo.id ? "#FEFAE0" : "#fff",
+                    borderBottom: "1px solid #f0e8d8",
+                    cursor: "pointer",
+                  }}
+                  className="px-4 py-3 hover:bg-amber-50 transition-all"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span
+                      style={{ color: "#606C38" }}
+                      className="font-semibold text-sm"
+                    >
+                      {convo.with}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">{convo.time}</span>
+                      {convo.unread > 0 && (
+                        <span
+                          style={{ backgroundColor: "#BC6C25", color: "#fff" }}
+                          className="text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold"
+                        >
+                          {convo.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">
+                    {convo.lastMessage}
+                  </p>
+                  {convo.relatedRequest && (
+                    <p
+                      style={{ color: "#DDA15E" }}
+                      className="text-xs mt-1 font-semibold truncate"
+                    >
+                      Re: {convo.relatedRequest}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
           </div>
 
-          {/* Right — active conversation */}
+          {/* Active conversation */}
           {activeConvo ? (
             <div
               style={{ backgroundColor: "#fff", border: "1px solid #DDA15E" }}
@@ -240,13 +274,20 @@ function ChatPage() {
             >
               {/* Convo header */}
               <div
-                style={{ borderBottom: "1px solid #DDA15E", backgroundColor: "#FEFAE0" }}
+                style={{
+                  borderBottom: "1px solid #DDA15E",
+                  backgroundColor: "#FEFAE0",
+                }}
                 className="px-5 py-3 rounded-t-2xl"
               >
                 <h2 style={{ color: "#606C38" }} className="font-bold">
                   {activeConvo.with}
                 </h2>
-                <p className="text-xs text-gray-400">Private conversation</p>
+                {activeConvo.relatedRequest && (
+                  <p style={{ color: "#BC6C25" }} className="text-xs mt-0.5">
+                    Re: {activeConvo.relatedRequest}
+                  </p>
+                )}
               </div>
 
               {/* Messages */}
@@ -259,7 +300,10 @@ function ChatPage() {
                       className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                     >
                       {!isMe && (
-                        <span style={{ color: "#BC6C25" }} className="text-xs font-semibold mb-1 px-1">
+                        <span
+                          style={{ color: "#BC6C25" }}
+                          className="text-xs font-semibold mb-1 px-1"
+                        >
                           {msg.from}
                         </span>
                       )}
@@ -274,7 +318,9 @@ function ChatPage() {
                       >
                         {msg.text}
                       </div>
-                      <span className="text-xs text-gray-400 mt-1 px-1">{msg.time}</span>
+                      <span className="text-xs text-gray-400 mt-1 px-1">
+                        {msg.time}
+                      </span>
                     </div>
                   );
                 })}
@@ -291,10 +337,10 @@ function ChatPage() {
                   placeholder={`Message ${activeConvo.with}...`}
                   value={privateInput}
                   onChange={(e) => setPrivateInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendPrivateMessage()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendPrivate()}
                 />
                 <button
-                  onClick={sendPrivateMessage}
+                  onClick={handleSendPrivate}
                   style={{ backgroundColor: "#BC6C25", color: "#FEFAE0" }}
                   className="px-5 py-2 rounded-full font-semibold text-sm hover:opacity-90 transition-all"
                 >
@@ -304,10 +350,16 @@ function ChatPage() {
             </div>
           ) : (
             <div
-              style={{ backgroundColor: "#fff", border: "1px dashed #DDA15E" }}
+              style={{
+                backgroundColor: "#fff",
+                border: "1px dashed #DDA15E",
+              }}
               className="rounded-2xl flex flex-col items-center justify-center text-center p-10"
             >
-              <p style={{ color: "#606C38" }} className="text-lg font-bold mb-2">
+              <p
+                style={{ color: "#606C38" }}
+                className="text-lg font-bold mb-2"
+              >
                 No conversation selected
               </p>
               <p className="text-sm text-gray-400">
