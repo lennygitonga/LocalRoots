@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addReport, resolveReport } from "../store/slices/reportsSlice";
+import { addReport, resolveReport, setReports } from "../store/slices/reportsSlice";
+import { fetchReports, createReport, resolveReport as resolveReportAPI } from "../api";
 
 function ReportPage() {
   const [type, setType] = useState("");
@@ -13,7 +14,19 @@ function ReportPage() {
   const dispatch = useDispatch();
   const reports = useSelector((state) => state.reports);
 
-  function handleSubmit() {
+useEffect(() => {
+  async function loadReports() {
+    try {
+      const data = await fetchReports();
+      dispatch(setReports(data));
+    } catch (err) {
+      console.error("Failed to load reports:", err);
+    }
+  }
+  loadReports();
+}, []);
+
+  async function handleSubmit() {
     if (!type || !description || !location || !urgency) {
       alert("Please fill in all required fields.");
       return;
@@ -25,7 +38,6 @@ function ReportPage() {
     }
 
     const newReport = {
-      id: Date.now(),
       type: type === "Other" ? otherType : type,
       description,
       location,
@@ -35,7 +47,13 @@ function ReportPage() {
       date: new Date().toLocaleDateString(),
     };
 
-    dispatch(addReport(newReport));
+    try {
+      const saved = await createReport(newReport);
+      dispatch(addReport(saved));
+    } catch (err) {
+      console.error("Failed to save report:", err);
+    }
+
     setType("");
     setOtherType("");
     setDescription("");
@@ -233,7 +251,7 @@ function ReportPage() {
             <div className="flex flex-col gap-4">
               {[...reports].reverse().map((report) => (
                 <div
-                  key={report.id}
+                  key={report._id || report.id}
                   style={{
                     backgroundColor: "#fff",
                     border: "1px solid #DDA15E",
@@ -277,7 +295,14 @@ function ReportPage() {
                     </span>
                     {report.status === "Open" && (
                       <button
-                        onClick={() => dispatch(resolveReport(report.id))}
+                        onClick={async () => {
+                          try {
+                            await resolveReportAPI(report._id || report.id);
+                            dispatch(resolveReport(report._id || report.id));
+                          } catch (err) {
+                            console.error("Failed to resolve report:", err);
+                          }
+                        }}
                         style={{
                           backgroundColor: "#FEFAE0",
                           border: "1px solid #606C38",

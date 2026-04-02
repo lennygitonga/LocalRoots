@@ -8,13 +8,14 @@ const chatSlice = createSlice({
     activeConversationId: null,
   },
   reducers: {
+    setPublicMessages: (state, action) => {
+      state.publicMessages = action.payload;
+    },
     addPublicMessage: (state, action) => {
       state.publicMessages.push(action.payload);
     },
     startConversation: (state, action) => {
-      const exists = state.conversations.find(
-        (c) => c.id === action.payload.id
-      );
+      const exists = state.conversations.find((c) => c.id === action.payload.id);
       if (!exists) {
         state.conversations.push(action.payload);
       }
@@ -31,9 +32,7 @@ const chatSlice = createSlice({
       }
     },
     markAsRead: (state, action) => {
-      const convo = state.conversations.find(
-        (c) => c.id === action.payload
-      );
+      const convo = state.conversations.find((c) => c.id === action.payload);
       if (convo) convo.unread = 0;
     },
     setActiveConversation: (state, action) => {
@@ -43,6 +42,7 @@ const chatSlice = createSlice({
 });
 
 export const {
+  setPublicMessages,
   addPublicMessage,
   startConversation,
   sendPrivateMessage,

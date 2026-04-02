@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import ReportPage from "./pages/ReportPage";
 import HelpPage from "./pages/HelpPage";
@@ -11,11 +12,26 @@ function App() {
     <>
       <Navbar />
       <Routes>
+        {/* Public routes — anyone can access */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/report" element={<ReportPage />} />
-        <Route path="/help" element={<HelpPage />} />
-        <Route path="/chat" element={<ChatPage />} />
         <Route path="/auth" element={<AuthPage />} />
+
+        {/* Protected routes — must be logged in */}
+        <Route path="/report" element={
+          <ProtectedRoute>
+            <ReportPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/help" element={
+          <ProtectedRoute>
+            <HelpPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/chat" element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        } />
       </Routes>
     </>
   );
