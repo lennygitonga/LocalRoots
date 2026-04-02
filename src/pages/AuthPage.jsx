@@ -85,7 +85,7 @@ function AuthPage() {
     <div
       style={{
         backgroundColor: "#1a2e0a",
-        backgroundImage: "url('/src/assets/hero.png')",
+        backgroundImage: "url('public/images/hero.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
