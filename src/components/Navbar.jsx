@@ -48,7 +48,7 @@ function Navbar() {
       {/* Logo */}
       <div className="flex items-center gap-2">
         <img
-          src="/src/assets/local roots logo.jpg"
+          src="/public/images/local roots logo.png"
           alt="Local Roots Logo"
           className="w-9 h-9 rounded-full object-cover"
         />
