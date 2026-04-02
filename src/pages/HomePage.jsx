@@ -35,7 +35,7 @@ function HomePage() {
     return (
         <div
             style={{
-                backgroundImage: "url('public/images/hero.png')",
+                backgroundImage: "url('/images/hero.png')",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 backgroundAttachment: "fixed",

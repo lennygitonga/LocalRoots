@@ -85,7 +85,7 @@ function AuthPage() {
     <div
       style={{
         backgroundColor: "#1a2e0a",
-        backgroundImage: "url('public/images/hero.png')",
+        backgroundImage: "url('/images/hero.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
@@ -110,7 +110,7 @@ function AuthPage() {
         {/* Logo */}
         <div className="text-center mb-6">
           <img
-            src="/src/assets/local roots logo.jpg"
+            src="/images/local roots logo.png"
             alt="Local Roots"
             className="w-14 h-14 rounded-full object-cover mx-auto mb-3"
           />
