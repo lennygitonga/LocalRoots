@@ -11,6 +11,8 @@ import ReportPage from "./pages/ReportPage";
 import HelpPage from "./pages/HelpPage";
 import ChatPage from "./pages/ChatPage";
 import AuthPage from "./pages/AuthPage";
+import Footer from "./components/Footer";
+import AIAssistant from "./components/AIAssistant";
 
 function App() {
   const dispatch = useDispatch();
@@ -53,24 +55,31 @@ function App() {
     );
   }
 
-  return (
-    <>
+ return (
+    
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#FEFAE0" }}>
       <Navbar />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/report" element={
-          <ProtectedRoute><ReportPage /></ProtectedRoute>
-        } />
-        <Route path="/help" element={
-          <ProtectedRoute><HelpPage /></ProtectedRoute>
-        } />
-        <Route path="/chat" element={
-          <ProtectedRoute><ChatPage /></ProtectedRoute>
-        } />
-      </Routes>
-    </>
+      
+     
+      <main className="flex-grow">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/report" element={
+            <ProtectedRoute><ReportPage /></ProtectedRoute>
+          } />
+          <Route path="/help" element={
+            <ProtectedRoute><HelpPage /></ProtectedRoute>
+          } />
+          <Route path="/chat" element={
+            <ProtectedRoute><ChatPage /></ProtectedRoute>
+          } />
+        </Routes>
+      </main>
+      <Footer />
+      <AIAssistant />
+    </div>
   );
 }
 
-export default App;
+export default App; 
