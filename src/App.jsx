@@ -12,7 +12,6 @@ import HelpPage from "./pages/HelpPage";
 import ChatPage from "./pages/ChatPage";
 import AuthPage from "./pages/AuthPage";
 import Footer from "./components/Footer";
-import AIAssistant from "./components/AIAssistant";
 
 function App() {
   const dispatch = useDispatch();
@@ -77,7 +76,6 @@ function App() {
         </Routes>
       </main>
       <Footer />
-      <AIAssistant />
     </div>
   );
 }
