@@ -6,8 +6,8 @@ A community-based web app where neighbours report abuse and request or offer hel
 
 ## Live Links
 
-- Frontend: `https://local-roots.vercel.app` ← replace with your Vercel URL
-- Backend API: `https://local-roots-api.onrender.com` ← replace with your Render URL
+- Frontend: https://local-roots-ncqw.vercel.app/
+- Backend API: https://local-roots-backend.onrender.com 
 
 ---
 
@@ -36,29 +36,6 @@ A community-based web app where neighbours report abuse and request or offer hel
 
 ---
 
-## Setup
-
-### Frontend
-```bash
-cd local-roots-frontend
-npm install
-npm run dev
-```
-
-### Backend
-```bash
-cd local-roots-backend
-npm install
-npm run dev
-```
-
-Create a `.env` file in the backend folder:
-```
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-```
-
----
 
 ## API Routes
 
@@ -73,3 +50,9 @@ MONGO_URI=your_mongodb_connection_string
 | DELETE | /api/help/:id | Delete a help request |
 | GET | /api/messages/public | Get public messages |
 | POST | /api/messages | Send a message |
+
+## Backend
+- Local-roots-backend repository:https://github.com/lennygitonga/local-roots-backend
+
+##About 
+This project is done by **Lenny Gitonga**

@@ -35,18 +35,26 @@ function ChatPage() {
     color: "#1a1a1a",
     outline: "none",
   };
-
-  useEffect(() => {
-    async function loadMessages() {
-      try {
-        const data = await fetchPublicMessages();
-        dispatch(setPublicMessages(data));
-      } catch (err) {
-        console.error("Failed to load messages:", err);
-      }
+  
+useEffect(() => {
+  async function loadMessages() {
+    try {
+      const data = await fetchPublicMessages();
+      dispatch(setPublicMessages(data));
+    } catch (err) {
+      console.error("Failed to load messages:", err);
     }
-    loadMessages();
-  }, []);
+  }
+
+  // Load immediately on mount
+  loadMessages();
+
+  // Then poll every 5 seconds
+  const interval = setInterval(loadMessages, 5000);
+
+  // Clear interval when user leaves the page
+  return () => clearInterval(interval);
+}, []);
 
   // Auto open private tab if coming from help page
   useEffect(() => {
